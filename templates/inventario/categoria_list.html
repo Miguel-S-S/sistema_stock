@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Categorías{% endblock %}
+
+{% block content %}
+    <h2>Categorías de Productos</h2>
+    <a href="#" class="btn btn-primary mb-3">Nueva Categoría</a>
+    
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="3">Listado pendiente de conectar a la BD</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary mt-3">Volver al Menú</a>
+{% endblock %}

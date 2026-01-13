@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Listado de Productos{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📦 Lista de Productos</h2>
+        <div>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-2">Volver al Menú</a>
+            <a href="{% url 'producto_crear' %}" class="btn btn-success">
+                <i class="bi bi-plus-lg"></i> Nuevo Producto
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4 border-0 shadow-sm bg-light">
+        <div class="card-body py-2">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="buscadorInput" class="form-control border-start-0" placeholder="Buscar por nombre, código, marca o categoría...">
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-striped table-hover align-middle" id="tablaProductos">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cód. Barras</th> <th>Marca</th>
+                        <th>Categorías</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                        <td><span class="fw-bold">{{ producto.nombre }}</span></td>
+                        
+                        <td>
+                            {% if producto.codigo_barras %}
+                                <span class="badge bg-light text-dark border font-monospace">{{ producto.codigo_barras }}</span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ producto.marca|default:"-" }}</td>
+                        <td>
+                            {% for cat in producto.categorias.all %}
+                                <span class="badge bg-secondary">{{ cat.nombre }}</span>
+                            {% empty %}
+                                <span class="text-muted small">Sin categoría</span>
+                            {% endfor %}
+                        </td>
+                        <td><small class="text-muted">{{ producto.descripcion|default:"-"|truncatechars:50 }}</small></td>
+                        <td class="fw-bold text-success">${{ producto.precio|floatformat:2 }}</td>
+                        <td>
+                            {% if producto.stock_actual == 0 %}
+                                <span class="badge bg-danger">Sin Stock</span>
+                            {% elif producto.stock_actual < 5 %}
+                                <span class="badge bg-warning text-dark">{{ producto.stock_actual }} (Bajo)</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border">{{ producto.stock_actual }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'producto_editar' producto.id %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr class="no-search-results">
+                        <td colspan="8" class="text-center py-5">
+                            <p class="text-muted mb-0">No hay productos cargados en el sistema.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <tr id="sinResultados" style="display: none;">
+                        <td colspan="8" class="text-center py-4">
+                            <p class="text-muted mb-0">No se encontraron productos que coincidan.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('buscadorInput');
+            const tabla = document.getElementById('tablaProductos');
+            const filas = tabla.getElementsByTagName('tr');
+            const mensajeSinResultados = document.getElementById('sinResultados');
+
+            input.addEventListener('keyup', function() {
+                const filtro = input.value.toLowerCase();
+                let hayResultados = false;
+
+                for (let i = 1; i < filas.length; i++) {
+                    const fila = filas[i];
+                    
+                    if (fila.id === 'sinResultados' || fila.classList.contains('no-search-results')) {
+                        continue;
+                    }
+
+                    // Al agregar el campo a la fila, el buscador YA funciona automáticamente
+                    // porque busca en todo el texto de la fila (incluyendo el nuevo código)
+                    const textoFila = fila.textContent || fila.innerText;
+
+                    if (textoFila.toLowerCase().indexOf(filtro) > -1) {
+                        fila.style.display = ""; 
+                        hayResultados = true;
+                    } else {
+                        fila.style.display = "none"; 
+                    }
+                }
+
+                if (mensajeSinResultados) {
+                    mensajeSinResultados.style.display = hayResultados ? "none" : "";
+                }
+            });
+        });
+    </script>
+{% endblock %}

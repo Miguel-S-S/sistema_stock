@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Acceso al Sistema</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="height: 100vh;">
+
+    <div class="card shadow p-4" style="width: 400px;">
+        <h3 class="text-center mb-4">Sistema de organizacion y ventas</h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="alert alert-danger">Usuario o contraseña incorrectos</div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label>Usuario</label>
+                <input type="text" name="username" class="form-control" required autofocus>
+            </div>
+
+            <div class="mb-3">
+                <label>Contraseña</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+        </form>
+    </div>
+
+</body>
+</html>

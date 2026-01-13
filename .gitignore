@@ -1,0 +1,13 @@
+# Ignorar el entorno virtual (es muy pesado y se recrea en el servidor)
+venv/
+env/
+
+# Ignorar archivos compilados de Python
+*.pyc
+__pycache__/
+
+# Ignorar la base de datos local (en producción usarás otra o esta misma pero subida manualmente)
+db.sqlite3
+
+# Ignorar configuraciones del editor (VS Code)
+.vscode/

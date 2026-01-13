@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket #{{ venta.id }}</title>
+    <style>
+        body { font-family: 'Courier New', monospace; font-size: 14px; width: 300px; margin: 0 auto; }
+        .header, .footer { text-align: center; margin-bottom: 10px; }
+        .line { border-bottom: 1px dashed black; margin: 5px 0; }
+        table { width: 100%; text-align: left; }
+        .text-right { text-align: right; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px; text-align: center;">
+        <button onclick="window.print()">🖨️ Imprimir</button>
+        <a href="{% url 'dashboard' %}">Volver</a>
+    </div>
+
+    <div class="header">
+        <h3>LIBRERÍA SYSTEM</h3>
+        <p>Recibo X - No válido como factura</p>
+        <p>Fecha: {{ venta.fecha|date:"d/m/Y H:i" }}</p>
+    </div>
+
+    <div class="line"></div>
+
+    <p><strong>Cliente:</strong> {{ venta.cliente|default:"Consumidor Final" }}</p>
+    {% if venta.cliente.dni %}<p>DNI: {{ venta.cliente.dni }}</p>{% endif %}
+
+    <div class="line"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Cant</th>
+                <th>Prod</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in venta.detalles.all %}
+            <tr>
+                <td>{{ detalle.cantidad }}</td>
+                <td>{{ detalle.producto.nombre }}</td>
+                <td class="text-right">${{ detalle.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="line"></div>
+
+    <h3 class="text-right">TOTAL: ${{ venta.total }}</h3>
+
+    <div class="footer">
+        <p>¡Gracias por su compra!</p>
+    </div>
+</body>
+</html>
