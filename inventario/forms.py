@@ -1,8 +1,8 @@
 from django import forms
-# IMPORTANTE: Esta línea arregla el primer error
+
 from django.forms import inlineformset_factory 
-# IMPORTANTE: Asegúrate de importar Venta y DetalleVenta aquí
-from .models import Producto, Cliente, Venta, DetalleVenta
+
+from .models import Producto, Cliente, Venta, DetalleVenta, Presupuesto, DetallePresupuesto
 
 # --- PRODUCTOS ---
 class ProductoForm(forms.ModelForm):
@@ -19,7 +19,6 @@ class ProductoForm(forms.ModelForm):
             'descripcion'
         ]
         widgets = {
-            #configuracion para el escaner de codigo de barras
             'codigo_barras': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Escanear código de barras', 'autofocus': 'autofocus'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Resma A4'}),
             'marca': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Ledesma, Bic...'}),
@@ -74,12 +73,40 @@ class DetalleVentaForm(forms.ModelForm):
             'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
         }
 
-# ...y LUEGO creamos la fábrica (FormSet) que lo utiliza.
-# Si pones esto arriba de la clase DetalleVentaForm, Python dará error.
 DetalleVentaFormSet = inlineformset_factory(
     Venta, 
     DetalleVenta, 
     form=DetalleVentaForm,
+    extra=1,
+    can_delete=True
+)
+
+class PresupuestoForm(forms.ModelForm):
+    class Meta:
+        model = Presupuesto
+        fields = ['cliente', 'descuento']
+        widgets = {
+            'cliente': forms.Select(attrs={'class': 'form-select'}),
+            'descuento': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '100'}),
+        }
+        labels = {
+            'cliente': 'Cliente (Opcional)',
+            'descuento': 'Descuento Global (%)'
+        }
+
+class DetallePresupuestoForm(forms.ModelForm):
+    class Meta:
+        model = DetallePresupuesto
+        fields = ['producto', 'cantidad']
+        widgets = {
+            'producto': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
+        }
+
+DetallePresupuestoFormSet = inlineformset_factory(
+    Presupuesto, 
+    DetallePresupuesto, 
+    form=DetallePresupuestoForm,
     extra=1,
     can_delete=True
 )

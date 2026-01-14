@@ -2,10 +2,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Producto, Categoria, Cliente, Venta, DetalleVenta # Asumiendo que tienes estos modelos
-from .forms import ProductoForm, ClienteForm, VentaForm, DetalleVentaFormSet
+from .models import Producto, Categoria, Cliente, Venta, DetalleVenta, DetallePresupuesto, Presupuesto # Asumiendo que tienes estos modelos
+from .forms import ProductoForm, ClienteForm, VentaForm, DetalleVentaFormSet, PresupuestoForm, DetallePresupuestoFormSet
 from django.db import transaction
-
+from decimal import Decimal
 
 # 1. EL MENÚ PRINCIPAL (GRIDS)
 @login_required
@@ -147,3 +147,65 @@ def nueva_venta(request):
 def ticket_venta(request, pk):
     venta = get_object_or_404(Venta, pk=pk)
     return render(request, 'sales/ticket.html', {'venta': venta})
+
+@login_required
+def nuevo_presupuesto(request):
+    if request.method == 'POST':
+        form = PresupuestoForm(request.POST)
+        formset = DetallePresupuestoFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
+            try:
+                with transaction.atomic():
+                    presupuesto = form.save(commit=False)
+                    presupuesto.total = 0 
+                    presupuesto.save()
+
+                    subtotal_acumulado = Decimal(0) # Inicializamos como Decimal
+                    detalles = formset.save(commit=False)
+
+                    for detalle in detalles:
+                        producto = detalle.producto
+                        detalle.presupuesto = presupuesto
+                        
+                        # CORRECCIÓN 1: No usamos float(). Multiplicamos directo.
+                        # (Entero * Decimal = Decimal, así que funciona perfecto)
+                        detalle.precio_unitario = producto.precio 
+                        detalle.subtotal = detalle.cantidad * producto.precio
+                        
+                        detalle.save()
+                        subtotal_acumulado += detalle.subtotal
+
+                    # CORRECCIÓN 2: Cálculo del descuento usando Decimal
+                    # Convertimos el 100 a Decimal para que la división sea segura
+                    descuento = presupuesto.descuento # Ya viene como Decimal desde el modelo
+                    monto_descuento = subtotal_acumulado * (descuento / Decimal(100))
+                    
+                    presupuesto.total = subtotal_acumulado - monto_descuento
+                    presupuesto.save()
+
+                    messages.success(request, '¡Presupuesto generado exitosamente!')
+                    return redirect('ver_presupuesto', pk=presupuesto.id)
+
+            except Exception as e:
+                messages.error(request, str(e))
+    else:
+        form = PresupuestoForm()
+        formset = DetallePresupuestoFormSet()
+
+    return render(request, 'sales/presupuesto_form.html', {
+        'form': form, 
+        'formset': formset
+})
+
+@login_required
+def ver_presupuesto(request, pk):
+    presupuesto = get_object_or_404(Presupuesto, pk=pk)
+    # Apuntamos al nuevo template de detalle
+    return render(request, 'sales/presupuesto_detail.html', {'presupuesto': presupuesto})
+
+@login_required
+def presupuesto_list(request):
+    # Traemos todos, ordenados por fecha descendente (lo último primero)
+    presupuestos = Presupuesto.objects.all().order_by('-fecha')
+    return render(request, 'sales/presupuesto_list.html', {'presupuestos': presupuestos})

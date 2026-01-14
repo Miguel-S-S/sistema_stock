@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from inventario import views # Importamos las vistas de tu app
+from inventario import views 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -42,4 +42,8 @@ urlpatterns = [
     path('clientes/editar/<int:pk>/', views.cliente_editar, name='cliente_editar'),
     path('ventas/nueva/', views.nueva_venta, name='nueva_venta'),
     path('ventas/ticket/<int:pk>/', views.ticket_venta, name='ticket_venta'),
+    #8. Presupuestos
+    path('presupuestos/nuevo/', views.nuevo_presupuesto, name='nuevo_presupuesto'),
+    path('presupuestos/ver/<int:pk>/', views.ver_presupuesto, name='ver_presupuesto'),
+    path('presupuestos/', views.presupuesto_list, name='presupuesto_list'),
 ]

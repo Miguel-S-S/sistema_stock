@@ -86,3 +86,24 @@ class DetalleVenta(models.Model):
         # Calculamos subtotal automáticamente antes de guardar
         self.subtotal = self.cantidad * self.precio_unitario
         super().save(*args, **kwargs)
+
+class Presupuesto(models.Model):
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+    # Nuevo campo para descuento (en porcentaje, ej: 10 para 10%)
+    descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Descuento (%)")
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"Presupuesto #{self.id} - {self.cliente}"
+
+class DetallePresupuesto(models.Model):
+    presupuesto = models.ForeignKey(Presupuesto, on_delete=models.CASCADE, related_name='detalles')
+    producto = models.ForeignKey(Producto, on_delete=models.SET_NULL, null=True)
+    cantidad = models.PositiveIntegerField()
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        self.subtotal = self.cantidad * self.precio_unitario
+        super().save(*args, **kwargs)  

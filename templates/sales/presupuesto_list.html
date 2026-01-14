@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Presupuestos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📂 Presupuestos Emitidos</h2>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-2">Volver</a>
+        <a href="{% url 'nuevo_presupuesto' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Nueva Cotización
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <table class="table table-hover table-striped mb-0 align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th># ID</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Descuento</th>
+                    <th>Total</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in presupuestos %}
+                <tr>
+                    <td><span class="fw-bold">#{{ p.id }}</span></td>
+                    <td>{{ p.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if p.cliente %}
+                            <i class="bi bi-person-fill text-muted"></i> {{ p.cliente }}
+                        {% else %}
+                            <span class="text-muted fst-italic">Consumidor Final</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.descuento > 0 %}
+                            <span class="badge bg-danger">-{{ p.descuento }}%</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold text-primary">${{ p.total }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'ver_presupuesto' p.id %}" class="btn btn-sm btn-outline-primary" title="Ver Detalle">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <p class="text-muted mb-0">No se han emitido presupuestos aún.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

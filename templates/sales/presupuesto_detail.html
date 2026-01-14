@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Presupuesto #{{ presupuesto.id }}</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; border: 1px solid #eee; }
+        .header { text-align: center; border-bottom: 3px solid #0d6efd; padding-bottom: 10px; margin-bottom: 20px; }
+        .client-info { background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background-color: #0d6efd; color: white; padding: 10px; text-align: left; }
+        td { border-bottom: 1px solid #ddd; padding: 10px; }
+        .totals { float: right; width: 40%; }
+        .totals table td { border: none; }
+        .btn-actions { margin-top: 50px; text-align: center; }
+        .btn { padding: 10px 20px; text-decoration: none; border-radius: 5px; color: white; margin: 0 5px; cursor: pointer;}
+        .btn-print { background-color: #198754; }
+        .btn-back { background-color: #6c757d; }
+        
+        @media print { .btn-actions { display: none; } body { border: none; } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>PRESUPUESTO</h1>
+        <h3>Librería & Papelería</h3>
+        <p>Corrientes, Argentina</p>
+    </div>
+
+    <div class="client-info">
+        <p><strong>Presupuesto N°:</strong> {{ presupuesto.id }}</p>
+        <p><strong>Fecha:</strong> {{ presupuesto.fecha|date:"d/m/Y H:i" }}</p>
+        <p><strong>Cliente:</strong> {{ presupuesto.cliente|default:"Consumidor Final" }}</p>
+        <p><strong>Validez de la oferta:</strong> 7 días</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Producto / Descripción</th>
+                <th>Cant.</th>
+                <th>Precio Unit.</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in presupuesto.detalles.all %}
+            <tr>
+                <td>{{ detalle.producto.nombre }} <small>({{ detalle.producto.marca }})</small></td>
+                <td>{{ detalle.cantidad }}</td>
+                <td>${{ detalle.precio_unitario }}</td>
+                <td>${{ detalle.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <table>
+            {% if presupuesto.descuento > 0 %}
+            <tr>
+                <td align="right">Descuento ({{ presupuesto.descuento }}%):</td>
+                <td align="right" style="color: red;"> - Aplicado</td>
+            </tr>
+            {% endif %}
+            
+            <tr>
+                <td align="right"><strong>TOTAL FINAL:</strong></td>
+                <td align="right"><strong style="font-size: 1.5em; color: #0d6efd;">${{ presupuesto.total }}</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="clear: both;"></div>
+
+    <div class="btn-actions">
+        <a href="{% url 'dashboard' %}" class="btn btn-back">Volver al Menú</a>
+        <button onclick="window.print()" class="btn btn-print">Imprimir Presupuesto</button>
+    </div>
+
+</body>
+</html>
