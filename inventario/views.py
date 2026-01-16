@@ -8,7 +8,7 @@ from .forms import (ProductoForm, ClienteForm, VentaForm,
                     DetalleVentaFormSet, PresupuestoForm, DetallePresupuestoFormSet, AperturaCajaForm, CierreCajaForm)
 from django.db import transaction
 from decimal import Decimal
-from django.db.models import Sum
+from django.db.models import Sum, Count, F
 from datetime import date, timedelta
 from django.utils.dateparse import parse_date
 from django.utils import timezone
@@ -382,6 +382,56 @@ def cerrar_caja(request):
     caja = CajaDiaria.objects.filter(estado=True).last()
     if not caja:
         return redirect('gestion_caja')
+    
+    # 1. Obtenemos todas las ventas asociadas a este turno de caja
+    # (Desde que se abrió hasta ahora)
+    ventas_turno = Venta.objects.filter(fecha__gte=caja.fecha_apertura)
+
+    # 2. Sumamos los totales por medio de pago
+    resumen_pagos = ventas_turno.aggregate(
+        total_efectivo=Sum('monto_efectivo'),
+        total_mp=Sum('monto_mercadopago'),
+        total_transf=Sum('monto_transferencia')
+    )
+    # Limpiamos los None (si no hubo ventas devuelve None, lo pasamos a 0)
+    ingreso_efectivo = resumen_pagos['total_efectivo'] or 0
+    ingreso_mp = resumen_pagos['total_mp'] or 0
+    ingreso_transf = resumen_pagos['total_transf'] or 0
+
+    # >>> NUEVO: DETALLE DE PRODUCTOS AGRUPADOS
+    # Esto busca todos los items vendidos, los agrupa por nombre y marca, 
+    # y suma sus cantidades y subtotales.
+    productos_vendidos = DetalleVenta.objects.filter(venta__in=ventas_turno).values(
+        'producto__nombre', 
+        'producto__marca'
+    ).annotate(
+        cantidad_total=Sum('cantidad'),
+        subtotal_acumulado=Sum('subtotal')
+    ).order_by('-cantidad_total') # Ordenamos los más vendidos primero
+    
+    # Calculamos el total de unidades sumando la columna que acabamos de generar
+    total_unidades = 0
+    for item in productos_vendidos:
+        total_unidades += item['cantidad_total']
+    # <<< FIN NUEVO
+
+    # 4. Saldos esperados (Igual que antes)
+    saldo_esperado_efectivo = caja.saldo_inicial + ingreso_efectivo
+    total_vendido = ingreso_efectivo + ingreso_mp + ingreso_transf
+
+    # 3. Calculamos mercadería vendida (cantidad de items)
+    # Filtramos los detalles que pertenecen a las ventas de este turno
+    total_productos = DetalleVenta.objects.filter(venta__in=ventas_turno).aggregate(
+        total_items=Sum('cantidad')
+    )['total_items'] or 0
+
+    # 4. Calculamos el "Saldo Esperado en Efectivo"
+    # Saldo Inicial + Ventas Efectivo - (Gastos en efectivo si los hubiera)
+    # Nota: Aquí asumimos que los gastos salen de caja chica. Si no tienes gastos implementados, es solo suma.
+    saldo_esperado_efectivo = caja.saldo_inicial + ingreso_efectivo
+
+    # Total general vendido (Digital + Físico)
+    total_vendido = ingreso_efectivo + ingreso_mp + ingreso_transf
 
     # CALCULAR SALDO ESPERADO (Saldo Inicial + Ventas del día - Gastos del día)
     # Por simplicidad, sumamos el Debe de la cuenta Caja desde la hora de apertura
@@ -422,7 +472,15 @@ def cerrar_caja(request):
     return render(request, 'sales/caja_cierre.html', {
         'form': form, 
         'caja': caja,
-        'saldo_sistema': saldo_sistema
+        'saldo_sistema': saldo_sistema,
+        'ingreso_efectivo': ingreso_efectivo,
+        'ingreso_mp': ingreso_mp,
+        'ingreso_transf': ingreso_transf,
+        'productos_vendidos': productos_vendidos, #
+        'total_unidades': total_unidades,
+        'total_productos': total_productos,
+        'total_vendido': total_vendido,
+        'saldo_esperado_efectivo': saldo_esperado_efectivo
     })
 
 @login_required
