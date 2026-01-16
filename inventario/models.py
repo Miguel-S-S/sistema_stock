@@ -67,13 +67,19 @@ class Cliente(models.Model):
         return f"{self.apellido}, {self.nombre}"
     
 class Venta(models.Model):
-    # Relación opcional: si se borra el cliente, la venta queda (on_delete=models.SET_NULL)
+    # Cliente ya permite nulos (blank=True, null=True), así que soporta anónimo
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True)
     fecha = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # NUEVOS CAMPOS DE PAGO
+    monto_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    monto_mercadopago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    monto_transferencia = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    vuelto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"Venta #{self.id} - {self.fecha.strftime('%d/%m/%Y')}"
+        return f"Venta #{self.id} - {self.cliente or 'Consumidor Final'}"
 
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
@@ -107,3 +113,58 @@ class DetallePresupuesto(models.Model):
     def save(self, *args, **kwargs):
         self.subtotal = self.cantidad * self.precio_unitario
         super().save(*args, **kwargs)  
+
+class Cuenta(models.Model):
+    TIPO_CHOICES = [
+        ('ACTIVO', 'Activo'),
+        ('PASIVO', 'Pasivo'),
+        ('PN', 'Patrimonio Neto'),
+        ('INGRESO', 'Ingreso (Resultado Positivo)'),
+        ('EGRESO', 'Egreso (Resultado Negativo)'),
+    ]
+    codigo = models.CharField(max_length=10, unique=True)
+    nombre = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+
+    def __str__(self):
+        return f"{self.codigo} - {self.nombre}"
+
+class Asiento(models.Model):
+    TIPO_ASIENTO = [
+        ('APERTURA', 'Apertura / Saldos Iniciales'),
+        ('NORMAL', 'Movimiento Normal'),
+        ('REFUNDICION', 'Refundición de Resultados'),
+        ('CIERRE', 'Cierre Patrimonial'),
+    ]
+    fecha = models.DateField()
+    descripcion = models.CharField(max_length=200)
+    tipo = models.CharField(max_length=20, choices=TIPO_ASIENTO, default='NORMAL')
+    creado_at = models.DateTimeField(auto_now_add=True)
+
+    def total_debe(self):
+        return sum(item.debe for item in self.items.all())
+
+    def total_haber(self):
+        return sum(item.haber for item in self.items.all())
+
+    def esta_balanceado(self):
+        return self.total_debe() == self.total_haber()
+
+class ItemAsiento(models.Model):
+    asiento = models.ForeignKey(Asiento, related_name='items', on_delete=models.CASCADE)
+    cuenta = models.ForeignKey(Cuenta, on_delete=models.PROTECT)
+    debe = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    haber = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+
+class CajaDiaria(models.Model):
+    fecha_apertura = models.DateTimeField(auto_now_add=True)
+    fecha_cierre = models.DateTimeField(null=True, blank=True)
+    saldo_inicial = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    saldo_final = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    estado = models.BooleanField(default=True) # True = Abierta, False = Cerrada
+    # Opcional: Usuario que abrió la caja
+    # usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        estado_str = "ABIERTA" if self.estado else "CERRADA"
+        return f"Caja {self.id} - {self.fecha_apertura.strftime('%d/%m/%Y')} ({estado_str})"

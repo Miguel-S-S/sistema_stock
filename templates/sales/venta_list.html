@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Ventas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📊 Historial de Ventas</h2>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-2">Volver</a>
+        <a href="{% url 'nueva_venta' %}" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Nueva Venta
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4 shadow-sm border-0 bg-light">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-muted">Filtros Rápidos:</label><br>
+                <div class="btn-group w-100" role="group">
+                    <a href="?filtro=hoy" class="btn btn-outline-primary bg-white">Hoy</a>
+                    <a href="?filtro=semana" class="btn btn-outline-primary bg-white">7 Días</a>
+                    <a href="?filtro=mes" class="btn btn-outline-primary bg-white">Este Mes</a>
+                    <a href="{% url 'venta_list' %}" class="btn btn-outline-secondary bg-white">Todo</a>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <label for="fecha_inicio" class="form-label fw-bold">Desde:</label>
+                <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}" class="form-control">
+            </div>
+            <div class="col-md-3">
+                <label for="fecha_fin" class="form-label fw-bold">Hasta:</label>
+                <input type="date" name="fecha_fin" value="{{ fecha_fin }}" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover mb-0 align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th># Ticket</th>
+                    <th>Fecha y Hora</th>
+                    <th>Cliente</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venta in ventas %}
+                <tr>
+                    <td><span class="fw-bold">#{{ venta.id }}</span></td>
+                    <td>{{ venta.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if venta.cliente %}
+                            {{ venta.cliente.nombre }} {{ venta.cliente.apellido }}
+                        {% else %}
+                            <span class="text-muted fst-italic">Consumidor Final</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">{{ venta.detalles.count }} prod.</span>
+                    </td>
+                    <td class="fw-bold text-success">${{ venta.total }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'ticket_venta' venta.id %}" class="btn btn-sm btn-outline-primary" title="Ver Ticket">
+                            <i class="bi bi-receipt"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <p class="text-muted mb-0">No se encontraron ventas en este período.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-light border-top">
+                <tr>
+                    <td colspan="4" class="text-end fw-bold py-3">TOTAL DEL PERÍODO:</td>
+                    <td colspan="2" class="fw-bold text-success fs-5 py-3">${{ total_periodo }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

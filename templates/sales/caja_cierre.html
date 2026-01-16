@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <h2 class="mb-3">🌙 Cierre de Caja</h2>
+    
+    <div class="alert alert-info">
+        <h5>Resumen del Sistema:</h5>
+        <p class="mb-0 fs-4 fw-bold">Debería haber: ${{ saldo_sistema }}</p>
+        <small>(Saldo Inicial + Ventas - Gastos)</small>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="fw-bold">¿Cuánto dinero contaste físicamente?</label>
+                    {{ form.monto_real }}
+                </div>
+                <button type="submit" class="btn btn-danger w-100">Confirmar Cierre</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

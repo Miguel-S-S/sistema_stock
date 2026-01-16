@@ -2,7 +2,7 @@ from django import forms
 
 from django.forms import inlineformset_factory 
 
-from .models import Producto, Cliente, Venta, DetalleVenta, Presupuesto, DetallePresupuesto
+from .models import Producto, Cliente, Venta, DetalleVenta, Presupuesto, DetallePresupuesto, CajaDiaria
 
 # --- PRODUCTOS ---
 class ProductoForm(forms.ModelForm):
@@ -55,13 +55,18 @@ class ClienteForm(forms.ModelForm):
 class VentaForm(forms.ModelForm):
     class Meta:
         model = Venta
-        fields = ['cliente']
+        fields = ['cliente', 'monto_efectivo', 'monto_mercadopago', 'monto_transferencia']
         widgets = {
             'cliente': forms.Select(attrs={'class': 'form-select'}),
+            'monto_efectivo': forms.NumberInput(attrs={'class': 'form-control payment-input', 'value': 0}),
+            'monto_mercadopago': forms.NumberInput(attrs={'class': 'form-control payment-input', 'value': 0}),
+            'monto_transferencia': forms.NumberInput(attrs={'class': 'form-control payment-input', 'value': 0}),
         }
-        labels = {
-            'cliente': 'Cliente (Dejar vacío para Consumidor Final)'
-        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['cliente'].required = False # Asegura que sea opcional
+        self.fields['cliente'].label = "Cliente (Dejar vacío para Consumidor Final)"
 
 # Primero definir este formulario...
 class DetalleVentaForm(forms.ModelForm):
@@ -110,3 +115,23 @@ DetallePresupuestoFormSet = inlineformset_factory(
     extra=1,
     can_delete=True
 )
+
+class AperturaCajaForm(forms.ModelForm):
+    class Meta:
+        model = CajaDiaria
+        fields = ['saldo_inicial']
+        widgets = {
+            'saldo_inicial': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Monto de cambio inicial'}),
+        }
+        labels = {'saldo_inicial': 'Saldo Inicial (Cambio en Caja)'}
+
+class CierreCajaForm(forms.ModelForm):
+    # Campo extra para que el usuario diga cuánto dinero contó físicamente
+    monto_real = forms.DecimalField(
+        max_digits=12, decimal_places=2, 
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        label="Dinero contado en Caja (Real)"
+    )
+    class Meta:
+        model = CajaDiaria
+        fields = [] # No editamos campos del modelo directamente aquí

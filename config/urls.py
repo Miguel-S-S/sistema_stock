@@ -40,10 +40,18 @@ urlpatterns = [
     path('clientes/', views.cliente_lista, name='cliente_lista'),
     path('clientes/nuevo/', views.cliente_crear, name='cliente_crear'),
     path('clientes/editar/<int:pk>/', views.cliente_editar, name='cliente_editar'),
+    # 8. Ventas
+    path('ventas/', views.venta_list, name='venta_list'),
     path('ventas/nueva/', views.nueva_venta, name='nueva_venta'),
     path('ventas/ticket/<int:pk>/', views.ticket_venta, name='ticket_venta'),
     #8. Presupuestos
     path('presupuestos/nuevo/', views.nuevo_presupuesto, name='nuevo_presupuesto'),
     path('presupuestos/ver/<int:pk>/', views.ver_presupuesto, name='ver_presupuesto'),
     path('presupuestos/', views.presupuesto_list, name='presupuesto_list'),
+    #9. Refundicion de cuentas
+    path('contabilidad/libro-diario/', views.libro_diario, name='libro_diario'),
+    path('contabilidad/cierre/', views.generar_cierre_contable, name='generar_cierre'),
+    path('caja/gestion/', views.gestion_caja, name='gestion_caja'),
+    path('caja/abrir/', views.abrir_caja, name='abrir_caja'),
+    path('caja/cerrar/', views.cerrar_caja, name='cerrar_caja'),
 ]

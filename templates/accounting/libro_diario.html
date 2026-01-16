@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Libro Diario{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📖 Libro Diario (Caja y Movimientos)</h2>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver</a>
+        
+        <form action="{% url 'generar_cierre' %}" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro de realizar la refundición de cuentas y el cierre? Esto generará asientos automáticos.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning">
+                <i class="bi bi-arrow-repeat"></i> Refundición y Cierre
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        {% for asiento in asientos %}
+            <div class="border-bottom mb-3 pb-3">
+                <div class="d-flex justify-content-between bg-light p-2 rounded">
+                    <strong>Fecha: {{ asiento.fecha|date:"d/m/Y" }}</strong>
+                    <span class="badge bg-secondary">{{ asiento.get_tipo_display }}</span>
+                    <span>Asiento #{{ asiento.id }}</span>
+                </div>
+                <div class="p-2">
+                    <p class="mb-2 fst-italic">{{ asiento.descripcion }}</p>
+                    <table class="table table-sm table-borderless mb-0">
+                        <thead>
+                            <tr class="text-muted small border-bottom">
+                                <th>Cuenta</th>
+                                <th class="text-end">Debe</th>
+                                <th class="text-end">Haber</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in asiento.items.all %}
+                            <tr>
+                                <td>{{ item.cuenta }}</td>
+                                <td class="text-end">{% if item.debe > 0 %}${{ item.debe }}{% endif %}</td>
+                                <td class="text-end">{% if item.haber > 0 %}${{ item.haber }}{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="fw-bold border-top">
+                                <td>TOTAL</td>
+                                <td class="text-end">${{ asiento.total_debe }}</td>
+                                <td class="text-end">${{ asiento.total_haber }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-center text-muted py-5">No hay movimientos registrados.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
