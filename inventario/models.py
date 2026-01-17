@@ -168,3 +168,43 @@ class CajaDiaria(models.Model):
     def __str__(self):
         estado_str = "ABIERTA" if self.estado else "CERRADA"
         return f"Caja {self.id} - {self.fecha_apertura.strftime('%d/%m/%Y')} ({estado_str})"
+    
+class Proveedor(models.Model):
+    razon_social = models.CharField(max_length=150, verbose_name="Razón Social / Nombre")
+    cuit = models.CharField(max_length=13, unique=True, verbose_name="CUIT/DNI")
+    telefono = models.CharField(max_length=50, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    direccion = models.CharField(max_length=200, blank=True, null=True)
+    condicion_iva = models.CharField(
+        max_length=50, 
+        choices=[('RI', 'Responsable Inscripto'), ('MONOTRIBUTO', 'Monotributo'), ('EXENTO', 'Exento')],
+        default='MONOTRIBUTO'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.razon_social} ({self.cuit})"
+    
+    class Meta:
+        verbose_name_plural = "Proveedores"
+
+class Compra(models.Model):
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
+    fecha = models.DateTimeField(auto_now_add=True)
+    comprobante = models.CharField(max_length=50, blank=True, null=True, verbose_name="N° Factura/Remito")
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    observaciones = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Compra #{self.id} - {self.proveedor.razon_social}"
+
+class DetalleCompra(models.Model):
+    compra = models.ForeignKey(Compra, related_name='detalles', on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    precio_costo = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Costo Unitario")
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        self.subtotal = self.cantidad * self.precio_costo
+        super().save(*args, **kwargs)

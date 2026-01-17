@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from inventario import views 
+from auditoria import views as audit_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -54,4 +55,12 @@ urlpatterns = [
     path('caja/gestion/', views.gestion_caja, name='gestion_caja'),
     path('caja/abrir/', views.abrir_caja, name='abrir_caja'),
     path('caja/cerrar/', views.cerrar_caja, name='cerrar_caja'),
+    #Proveedores
+    path('proveedores/', views.proveedor_list, name='proveedor_list'),
+    path('proveedores/nuevo/', views.proveedor_crear, name='proveedor_crear'),
+    path('proveedores/editar/<int:pk>/', views.proveedor_editar, name='proveedor_editar'),
+    path('proveedores/eliminar/<int:pk>/', views.proveedor_eliminar, name='proveedor_eliminar'),
+    path('compras/nueva/', views.nueva_compra, name='nueva_compra'),
+    #auditorias
+    path('auditoria/panel/', audit_views.ajuste_stock, name='auditoria_panel'),
 ]

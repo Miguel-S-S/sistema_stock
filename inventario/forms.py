@@ -2,7 +2,7 @@ from django import forms
 
 from django.forms import inlineformset_factory 
 
-from .models import Producto, Cliente, Venta, DetalleVenta, Presupuesto, DetallePresupuesto, CajaDiaria
+from .models import Producto, Cliente, Venta, DetalleVenta, Presupuesto, DetallePresupuesto, CajaDiaria, Proveedor, Compra, DetalleCompra
 
 # --- PRODUCTOS ---
 class ProductoForm(forms.ModelForm):
@@ -135,3 +135,44 @@ class CierreCajaForm(forms.ModelForm):
     class Meta:
         model = CajaDiaria
         fields = [] # No editamos campos del modelo directamente aquí
+
+class ProveedorForm(forms.ModelForm):
+    class Meta:
+        model = Proveedor
+        fields = ['razon_social', 'cuit', 'condicion_iva', 'telefono', 'email', 'direccion']
+        widgets = {
+            'razon_social': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Distribuidora Norte S.A.'}),
+            'cuit': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 20-12345678-9'}),
+            'condicion_iva': forms.Select(attrs={'class': 'form-select'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class CompraForm(forms.ModelForm):
+    class Meta:
+        model = Compra
+        fields = ['proveedor', 'comprobante', 'observaciones']
+        widgets = {
+            'proveedor': forms.Select(attrs={'class': 'form-select'}),
+            'comprobante': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: A-0001-12345678'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+class DetalleCompraForm(forms.ModelForm):
+    class Meta:
+        model = DetalleCompra
+        fields = ['producto', 'cantidad', 'precio_costo']
+        widgets = {
+            'producto': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'precio_costo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+DetalleCompraFormSet = inlineformset_factory(
+    Compra,
+    DetalleCompra,
+    form=DetalleCompraForm,
+    extra=1,
+    can_delete=True
+)

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Auditoría y Ajustes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🛡️ Centro de Auditoría y Control de Stock</h2>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow border-warning mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-tools"></i> Ajuste Manual de Stock</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">Use esto solo para correcciones, roturas o pérdidas. Todo queda registrado.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Producto:</label>
+                        {{ form.producto }}
+                    </div>
+                    <div class="mb-3">
+                        <label>Diferencia (+ para ingreso, - para egreso):</label>
+                        {{ form.cantidad_ajuste }}
+                    </div>
+                    <div class="mb-3">
+                        <label>Motivo (Obligatorio):</label>
+                        {{ form.motivo }}
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">Aplicar Ajuste</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-eye"></i> Ojo de Halcón (Últimos Movimientos)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                                <th>Entidad</th>
+                                <th>Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in eventos %}
+                            <tr>
+                                <td>{{ e.fecha|date:"d/m H:i" }}</td>
+                                <td>
+                                    {% if e.usuario %}{{ e.usuario.username }}{% else %}Sistema{% endif %}
+                                </td>
+                                <td>
+                                    {% if e.accion == 'CREATE' %}<span class="badge bg-success">ALTA</span>
+                                    {% elif e.accion == 'UPDATE' %}<span class="badge bg-primary">MODIF</span>
+                                    {% elif e.accion == 'DELETE' %}<span class="badge bg-danger">BAJA</span>
+                                    {% elif e.accion == 'AJUSTE' %}<span class="badge bg-warning text-dark">AJUSTE</span>
+                                    {% else %}<span class="badge bg-secondary">{{ e.accion }}</span>{% endif %}
+                                </td>
+                                <td>{{ e.content_type.model|upper }} #{{ e.object_id }}</td>
+                                <td>
+                                    {% if e.cambios %}
+                                        {% for k, v in e.cambios.items %}
+                                            <div><strong>{{ k }}:</strong> {{ v.antes }} &rarr; {{ v.despues }}</div>
+                                        {% endfor %}
+                                    {% else %}
+                                        {{ e.observacion|truncatechars:50 }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center">Sin actividad reciente.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#id_producto').select2({ theme: "bootstrap-5", width: '100%' });
+    });
+</script>
+{% endblock %}

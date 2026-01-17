@@ -44,21 +44,19 @@
             </div>
         </a>
     </div>
-
-    <div class="col-md-4">
-        <a href="{% url 'libro_diario' %}" class="text-decoration-none">
+        <div class="col-md-4">
+        <a href="{% url 'gestion_caja' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card bg-secondary text-white">
                 <div class="card-body text-center py-5">
-                    <i class="bi bi-cash-coin display-4 mb-3"></i>
-                    <h3>Caja</h3>
-                    <p class="small opacity-75">Apertura, Cierre y Movimientos</p>
+                    <i class="bi bi-wallet2 display-4 mb-3"></i>
+                    <h3>Caja Diaria</h3>
+                    <p class="small opacity-75">Control Caja (Abrir/Cerrar)</p>
                 </div>
             </div>
         </a>
     </div>
-
     <div class="col-md-4">
-        <a href="#" class="text-decoration-none">
+        <a href="{% url 'auditoria_panel' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card bg-warning text-dark">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-clipboard-data display-4 mb-3"></i>
@@ -68,7 +66,6 @@
             </div>
         </a>
     </div>
-
     <div class="col-md-4">
         <a href="{% url 'cliente_lista' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card bg-dark text-white">
@@ -80,9 +77,8 @@
             </div>
         </a>
     </div>
-
     <div class="col-md-4">
-        <a href="#" class="text-decoration-none">
+        <a href="{% url 'proveedor_list' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card bg-dark text-white">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-truck display-4 mb-3"></i>
@@ -92,13 +88,13 @@
             </div>
         </a>
     </div>
-    <div class="col-md-4">
-        <a href="{% url 'gestion_caja' %}" class="text-decoration-none">
+        <div class="col-md-4">
+        <a href="{% url 'libro_diario' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card bg-secondary text-white">
                 <div class="card-body text-center py-5">
-                    <i class="bi bi-wallet2 display-4 mb-3"></i>
-                    <h3>Caja</h3>
-                    <p class="small opacity-75">Control Diario (Abrir/Cerrar)</p>
+                    <i class="bi bi-cash-coin display-4 mb-3"></i>
+                    <h3>Caja Anual</h3>
+                    <p class="small opacity-75">Apertura, Cierre y Movimientos</p>
                 </div>
             </div>
         </a>

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Proveedores{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">🚚 Proveedores</h2>
+
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+
+        <a href="{% url 'proveedor_crear' %}" class="btn btn-dark">
+            <i class="bi bi-plus-lg"></i> Nuevo Proveedor
+        </a>
+
+        <a href="{% url 'nueva_compra' %}" class="btn btn-success">
+            <i class="bi bi-cart-plus"></i> Registrar Compra
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover table-striped mb-0 align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Razón Social</th>
+                    <th>CUIT</th>
+                    <th>Teléfono</th>
+                    <th>Condición IVA</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in proveedores %}
+                <tr>
+                    <td class="fw-bold">{{ p.razon_social }}</td>
+                    <td>{{ p.cuit }}</td>
+                    <td>{{ p.telefono|default:"-" }}</td>
+                    <td>
+                        <span class="badge bg-secondary">
+                            {{ p.condicion_iva }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'proveedor_editar' p.id %}"
+                           class="btn btn-sm btn-outline-primary"
+                           title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+
+                        <a href="{% url 'proveedor_eliminar' p.id %}"
+                           class="btn btn-sm btn-outline-danger"
+                           title="Eliminar"
+                           onclick="return confirm('¿Eliminar a {{ p.razon_social }}?');">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        No hay proveedores registrados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

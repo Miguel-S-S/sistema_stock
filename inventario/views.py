@@ -3,9 +3,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import (Producto, Categoria, Cliente, Venta, DetalleVenta, DetallePresupuesto, 
-                        Presupuesto, Cuenta, Asiento, ItemAsiento, CajaDiaria) 
+                        Presupuesto, Cuenta, Asiento, ItemAsiento, CajaDiaria, Proveedor, Compra, DetalleCompra) 
 from .forms import (ProductoForm, ClienteForm, VentaForm, 
-                    DetalleVentaFormSet, PresupuestoForm, DetallePresupuestoFormSet, AperturaCajaForm, CierreCajaForm)
+                    DetalleVentaFormSet, PresupuestoForm, DetallePresupuestoFormSet, AperturaCajaForm,
+                    CierreCajaForm, ProveedorForm, CompraForm, DetalleCompraFormSet)
 from django.db import transaction
 from decimal import Decimal
 from django.db.models import Sum, Count, F
@@ -574,3 +575,118 @@ def generar_cierre_contable(request):
             
     return redirect('libro_diario')
 
+# --- PROVEEDORES ---
+
+@login_required
+def proveedor_list(request):
+    proveedores = Proveedor.objects.all().order_by('razon_social')
+    return render(request, 'partners/proveedor_list.html', {'proveedores': proveedores})
+
+@login_required
+def proveedor_crear(request):
+    if request.method == 'POST':
+        form = ProveedorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Proveedor registrado correctamente.')
+            return redirect('proveedor_list')
+    else:
+        form = ProveedorForm()
+    return render(request, 'partners/proveedor_form.html', {'form': form, 'titulo': 'Nuevo Proveedor'})
+
+@login_required
+def proveedor_editar(request, pk):
+    proveedor = get_object_or_404(Proveedor, pk=pk)
+    if request.method == 'POST':
+        form = ProveedorForm(request.POST, instance=proveedor)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Proveedor actualizado.')
+            return redirect('proveedor_list')
+    else:
+        form = ProveedorForm(instance=proveedor)
+    return render(request, 'partners/proveedor_form.html', {'form': form, 'titulo': 'Editar Proveedor'})
+
+@login_required
+def proveedor_eliminar(request, pk):
+    proveedor = get_object_or_404(Proveedor, pk=pk)
+    proveedor.delete()
+    messages.success(request, 'Proveedor eliminado.')
+    return redirect('proveedor_list')
+
+@login_required
+def nueva_compra(request):
+    if request.method == 'POST':
+        form = CompraForm(request.POST)
+        formset = DetalleCompraFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
+            try:
+                with transaction.atomic():
+                    # 1. Guardar Cabecera
+                    compra = form.save(commit=False)
+                    compra.total = 0
+                    compra.save()
+
+                    total_compra = Decimal(0)
+                    detalles = formset.save(commit=False)
+
+                    for detalle in detalles:
+                        producto = detalle.producto
+                        
+                        # 2. ACTUALIZAR STOCK Y COSTO
+                        # Aumentamos el stock
+                        producto.stock_actual += detalle.cantidad
+                        # Actualizamos el precio de costo al nuevo valor de compra
+                        producto.precio_costo = detalle.precio_costo
+                        producto.save()
+
+                        # Guardar detalle
+                        detalle.compra = compra
+                        detalle.subtotal = detalle.cantidad * detalle.precio_costo
+                        detalle.save()
+
+                        total_compra += detalle.subtotal
+
+                    # Guardar total final
+                    compra.total = total_compra
+                    compra.save()
+
+                    # 3. ASIENTO CONTABLE (Mercaderías a Proveedores)
+                    asiento = Asiento.objects.create(
+                        fecha=date.today(),
+                        descripcion=f"Compra #{compra.id} - {compra.proveedor.razon_social}",
+                        tipo='NORMAL'
+                    )
+
+                    # DEBE: Mercaderías (Activo aumenta)
+                    cuenta_mercaderias = Cuenta.objects.get(codigo='1.02')
+                    ItemAsiento.objects.create(
+                        asiento=asiento,
+                        cuenta=cuenta_mercaderias,
+                        debe=total_compra,
+                        haber=0
+                    )
+
+                    # HABER: Proveedores (Pasivo aumenta/Deuda)
+                    cuenta_proveedores = Cuenta.objects.get(codigo='2.01')
+                    ItemAsiento.objects.create(
+                        asiento=asiento,
+                        cuenta=cuenta_proveedores,
+                        debe=0,
+                        haber=total_compra
+                    )
+
+                    messages.success(request, f'Compra registrada. Stock actualizado. Total: ${total_compra}')
+                    return redirect('dashboard') # O a una lista de compras si prefieres
+
+            except Exception as e:
+                messages.error(request, str(e))
+    else:
+        form = CompraForm()
+        formset = DetalleCompraFormSet()
+
+    return render(request, 'partners/compra_form.html', {
+        'form': form, 
+        'formset': formset
+    })
