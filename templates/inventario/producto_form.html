@@ -3,41 +3,75 @@
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">{{ titulo }}</h4>
-            </div>
-            <div class="card-body">
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    
+
+<div class="container mt-4">
+
+    <!-- TÍTULO -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">{{ titulo }}</h2>
+            <small class="text-muted">
+                Complete los datos del producto para su registro en el sistema
+            </small>
+        </div>
+
+        <a href="{% url 'producto_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <!-- CARD PRINCIPAL -->
+    <div class="card shadow-sm border-0 rounded-4">
+
+        <div class="card-body p-4">
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="row g-4">
+
                     {% for field in form %}
-                    <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
                             {{ field.label }}
                         </label>
+
                         {{ field }}
+
                         {% if field.help_text %}
-                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                            <div class="form-text">
+                                {{ field.help_text }}
+                            </div>
                         {% endif %}
-                        
+
                         {% if field.errors %}
                             <div class="text-danger small mt-1">
+                                <i class="bi bi-exclamation-circle"></i>
                                 {{ field.errors.0 }}
                             </div>
                         {% endif %}
                     </div>
                     {% endfor %}
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="{% url 'producto_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
-                        <button type="submit" class="btn btn-success">Guardar Producto</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+                <!-- ACCIONES -->
+                <div class="d-flex justify-content-end gap-2 mt-5">
+                    <a href="{% url 'producto_list' %}" class="btn btn-outline-secondary px-4">
+                        Cancelar
+                    </a>
+
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="bi bi-check-circle"></i> Guardar producto
+                    </button>
+                </div>
+
+            </form>
+
         </div>
     </div>
+
 </div>
+
 {% endblock %}

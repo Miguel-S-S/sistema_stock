@@ -101,87 +101,117 @@ def nueva_venta(request):
     if not CajaDiaria.objects.filter(estado=True).exists():
         messages.error(request, "⚠️ DEBES ABRIR LA CAJA ANTES DE VENDER")
         return redirect('gestion_caja')
-    # Crear un diccionario de precios para JS: { 'ID_PRODUCTO': PRECIO, ... }
-    # Usamos float() para que sea serializable a JSON
+
     lista_precios = {p.id: float(p.precio) for p in Producto.objects.all()}
     precios_json = json.dumps(lista_precios)
+
     if request.method == 'POST':
         form = VentaForm(request.POST)
         formset = DetalleVentaFormSet(request.POST)
 
         if form.is_valid() and formset.is_valid():
             try:
-                with transaction.atomic(): # Si algo falla, no se guarda nada (seguridad)
+                with transaction.atomic():
+
+                    # ======================
+                    # CABECERA
+                    # ======================
                     venta = form.save(commit=False)
-                    # Calcular el vuelto en el backend también por seguridad
-                    total_pagado = (venta.monto_efectivo or 0) + (venta.monto_mercadopago or 0) + (venta.monto_transferencia or 0)
-                    venta.total = 0 # Se calculará con los detalles
-                    venta.save() # Guardamos la cabecera primero para tener ID
+                    venta.total = Decimal(0)
+                    venta.save()
 
-                    total_venta = Decimal(0)
-                    total_costo = Decimal(0) # acumulador para el asiento del costo
-                    detalles = formset.save(commit=False) # guardar los detalles y actualizar stock
+                    total_acumulado = Decimal(0)
+                    total_costo = Decimal(0)
 
+                    detalles = formset.save(commit=False)
+
+                    # =====================================================
+                    # DETALLES DE VENTA
+                    # =====================================================
                     for detalle in detalles:
                         producto = detalle.producto
-                        
-                        # 1. Validar Stock
-                        if producto.stock_actual < detalle.cantidad:
-                            raise Exception(f"No hay suficiente stock de {producto.nombre}")
 
-                        # 2. Restar Stock
+                        # -------- VALIDAR STOCK --------
+                        if producto.stock_actual < detalle.cantidad:
+                            raise Exception(f"No hay stock suficiente de {producto.nombre}")
+
                         producto.stock_actual -= detalle.cantidad
                         producto.save()
 
-                        # 3. Guardar precio histórico y subtotal
+                        # -------- DESCUENTO POR PRODUCTO --------
                         detalle.venta = venta
-                        detalle.precio_unitario = producto.precio # Precio al momento de la venta
-                        detalle.subtotal = detalle.cantidad * detalle.precio_unitario
+                        detalle.precio_unitario = producto.precio
+
+                        bruto = detalle.cantidad * detalle.precio_unitario
+                        descuento_item = bruto * (detalle.descuento_porcentaje / Decimal(100))
+                        detalle.subtotal = bruto - descuento_item
+
                         detalle.save()
+                        total_acumulado += detalle.subtotal
 
-                        total_venta += detalle.subtotal
-                        #calcula costo total del item
-                        costo_unitario = producto.precio_costo if producto.precio_costo is not None else Decimal(0)
-                        total_costo += (costo_unitario * detalle.cantidad)
+                        # -------- COSTO --------
+                        costo_unitario = producto.precio_costo or Decimal(0)
+                        total_costo += costo_unitario * detalle.cantidad
 
-                    # 4. Actualizar total de la venta
-                    venta.total = total_venta
-                    venta.vuelto = total_pagado - total_venta # Guardamos el vuelto
+                    # =====================================================
+                    # NUEVA LÓGICA DE DESCUENTOS GLOBALES
+                    # =====================================================
+
+                    # 1️⃣ Descuento global PORCENTAJE
+                    if venta.descuento_global_porcentaje and venta.descuento_global_porcentaje > 0:
+                        monto_desc_porc = total_acumulado * (
+                            venta.descuento_global_porcentaje / Decimal(100)
+                        )
+                        total_acumulado -= monto_desc_porc
+
+                    # 2️⃣ Descuento global FIJO ($)
+                    total_final = total_acumulado - (venta.descuento_global or Decimal(0))
+
+                    if total_final < 0:
+                        total_final = Decimal(0)
+
+                    venta.total = total_final
+
+                    # =====================================================
+                    # VUELTO
+                    # =====================================================
+                    total_pagado = (
+                        (venta.monto_efectivo or 0) +
+                        (venta.monto_mercadopago or 0) +
+                        (venta.monto_transferencia or 0)
+                    )
+
+                    venta.vuelto = total_pagado - total_final
                     venta.save()
 
-                    # ==========================================
-                    # 3. GENERACIÓN AUTOMÁTICA DE ASIENTOS (NUEVO)
-                    # ==========================================
-                    
-                    # A) Asiento de Venta (Ingreso de Dinero)
-                    # ----------------------------------------
+                    # =====================================================
+                    # ASIENTO CONTABLE — VENTA
+                    # =====================================================
                     asiento_venta = Asiento.objects.create(
                         fecha=date.today(),
                         descripcion=f"Venta #{venta.id} - {venta.cliente or 'Consumidor Final'}",
                         tipo='NORMAL'
                     )
 
-                    # DEBE: Caja (Entra dinero)
-                    cuenta_caja = Cuenta.objects.get(codigo='1.01') # Asegúrate que este código coincida con el script anterior
+                    cuenta_caja = Cuenta.objects.get(codigo='1.01')
                     ItemAsiento.objects.create(
-                        asiento=asiento_venta, 
-                        cuenta=cuenta_caja, 
-                        debe=total_venta, 
+                        asiento=asiento_venta,
+                        cuenta=cuenta_caja,
+                        debe=total_final,
                         haber=0
                     )
 
-                    # HABER: Ventas (Resultado Positivo)
                     cuenta_ventas = Cuenta.objects.get(codigo='4.01')
                     ItemAsiento.objects.create(
-                        asiento=asiento_venta, 
-                        cuenta=cuenta_ventas, 
-                        debe=0, 
-                        haber=total_venta
+                        asiento=asiento_venta,
+                        cuenta=cuenta_ventas,
+                        debe=0,
+                        haber=total_final
                     )
 
-                    # B) Asiento de Costo (Salida de Mercadería)
-                    # ----------------------------------------
-                    # Si el producto tiene costo cargado, hacemos el asiento
+                    # =====================================================
+                    # ASIENTO CONTABLE — COSTO
+                    # =====================================================
                     if total_costo > 0:
                         asiento_costo = Asiento.objects.create(
                             fecha=date.today(),
@@ -189,7 +219,6 @@ def nueva_venta(request):
                             tipo='NORMAL'
                         )
 
-                        # DEBE: Costo de Mercadería Vendida (Pérdida/Egreso)
                         cuenta_cmv = Cuenta.objects.get(codigo='5.01')
                         ItemAsiento.objects.create(
                             asiento=asiento_costo,
@@ -198,7 +227,6 @@ def nueva_venta(request):
                             haber=0
                         )
 
-                        # HABER: Mercaderías (Activo que disminuye)
                         cuenta_mercaderias = Cuenta.objects.get(codigo='1.02')
                         ItemAsiento.objects.create(
                             asiento=asiento_costo,
@@ -207,25 +235,29 @@ def nueva_venta(request):
                             haber=total_costo
                         )
 
-                    messages.success(request, '¡Venta registrada exitosamente!')
-                    return redirect('ticket_venta', pk=venta.id) # Redirigir al Ticket
-                
+                    messages.success(request, "Venta registrada con descuentos 🎉")
+                    return redirect('ticket_venta', pk=venta.id)
+
             except Cuenta.DoesNotExist:
-                    # Error específico si no ejecutaste el script de cuentas
-                    messages.error(request, "Error Contable: Faltan configurar las Cuentas (Caja, Ventas, etc). Ejecuta el script de inicialización.")
+                messages.error(
+                    request,
+                    "Error contable: faltan cuentas configuradas."
+                )
             except Exception as e:
-                    messages.error(request, str(e))
+                messages.error(request, str(e))
         else:
-            messages.error(request, 'Error en el formulario. Verifique los datos.')
+            messages.error(request, "Error en los datos del formulario.")
     else:
         form = VentaForm()
         formset = DetalleVentaFormSet()
 
     return render(request, 'sales/nueva_venta.html', {
-        'form': form, 
-        'formset': formset, 
+        'form': form,
+        'formset': formset,
         'precios_json': precios_json
     })
+
+
 
 @login_required
 def ticket_venta(request, pk):

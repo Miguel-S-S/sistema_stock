@@ -71,7 +71,8 @@ class Venta(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True)
     fecha = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
+    descuento_global = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    descuento_global_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     # NUEVOS CAMPOS DE PAGO
     monto_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     monto_mercadopago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -87,7 +88,7 @@ class DetalleVenta(models.Model):
     cantidad = models.PositiveIntegerField()
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-
+    descuento_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     def save(self, *args, **kwargs):
         # Calculamos subtotal automáticamente antes de guardar
         self.subtotal = self.cantidad * self.precio_unitario

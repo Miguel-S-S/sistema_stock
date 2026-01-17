@@ -19,66 +19,106 @@
     <div class="row">
         <div class="col-lg-8">
             <h2 class="mb-4">💰 Nueva Venta</h2>
-            
+
             <div class="card mb-3 shadow-sm">
                 <div class="card-body">
-                    <label class="form-label fw-bold">Cliente (Opcional):</label>
+                    <label class="form-label fw-bold">Cliente (Opcional)</label>
                     <div class="input-group">
                         {{ form.cliente }}
-                        <a href="{% url 'cliente_crear' %}" target="_blank" class="btn btn-outline-success"><i class="bi bi-person-plus-fill"></i></a>
-                        <button type="button" class="btn btn-outline-secondary" onclick="location.reload();"><i class="bi bi-arrow-clockwise"></i></button>
+                        <a href="{% url 'cliente_crear' %}" target="_blank" class="btn btn-outline-success">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="location.reload();">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">Detalle de Productos</h5>
                 </div>
+
                 <div class="card-body p-0">
                     {{ formset.management_form }}
-                    <table class="table table-striped mb-0" id="tabla-productos">
+
+                    <table class="table table-striped mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>Producto</th>
-                                <th width="100">Cant.</th>
-                                <th width="120" class="text-end">Precio U.</th>
+                                <th width="90">Cant.</th>
+                                <th width="90">Desc %</th> <th width="110" class="text-end">Precio</th>
                                 <th width="120" class="text-end">Subtotal</th>
-                                <th width="50"></th>
+                                <th width="40"></th>
                             </tr>
                         </thead>
+
                         <tbody id="formset-container">
                             {% for form in formset %}
                             <tr class="form-row">
-                                <td>
-                                    {{ form.producto }}
-                                    {% if form.producto.errors %}<div class="text-danger small">{{ form.producto.errors.0 }}</div>{% endif %}
-                                </td>
+                                <td>{{ form.producto }}</td>
                                 <td>{{ form.cantidad }}</td>
-                                <td class="text-end align-middle"><span class="precio-unitario text-muted">-</span></td>
-                                <td class="text-end align-middle fw-bold"><span class="subtotal-row">$0.00</span></td>
+                                <td>{{ form.descuento_porcentaje }}</td>
+
+                                <td class="text-end align-middle">
+                                    <span class="precio-unitario text-muted">-</span>
+                                </td>
+
+                                <td class="text-end align-middle fw-bold">
+                                    <span class="subtotal-row">$0.00</span>
+                                </td>
+
                                 <td class="text-center align-middle">
                                     <div class="d-none">{{ form.DELETE }}</div>
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete-row"><i class="bi bi-trash"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete-row">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+
                     <div class="p-3">
-                        <button type="button" class="btn btn-outline-primary w-100" id="add-item"><i class="bi bi-plus-circle"></i> Agregar Producto</button>
+                        <button type="button" class="btn btn-outline-primary w-100" id="add-item">
+                            <i class="bi bi-plus-circle"></i> Agregar Producto
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-4">
+
             <div class="card shadow-sm mb-3">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0 text-center">Total a Pagar</h5>
+                <div class="card-header bg-success text-white text-center">
+                    <h5 class="mb-0">Resumen</h5>
                 </div>
+
                 <div class="card-body">
-                    <div class="total-display" id="gran-total">$0.00</div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal Items:</span>
+                        <span id="suma-subtotales" class="fw-bold">$0.00</span>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <label class="small fw-bold text-primary">Desc. Global (%)</label>
+                            {{ form.descuento_global_porcentaje }}
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold text-danger">Desc. Global ($)</label>
+                            {{ form.descuento_global }}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2 text-muted small">
+                        <span>Descuento aplicado:</span>
+                        <span id="info-descuentos">-$0.00</span>
+                    </div>
+
+                    <div class="total-display border-top pt-2" id="gran-total">$0.00</div>
                 </div>
             </div>
 
@@ -86,25 +126,26 @@
                 <div class="card-header fw-bold">Métodos de Pago</div>
                 <div class="card-body">
                     <div class="mb-2">
-                        <label class="small text-muted">💵 Efectivo</label>
+                        <label class="small">💵 Efectivo</label>
                         {{ form.monto_efectivo }}
                     </div>
                     <div class="mb-2">
-                        <label class="small text-muted">📱 Mercado Pago</label>
+                        <label class="small">📱 Mercado Pago</label>
                         {{ form.monto_mercadopago }}
                     </div>
                     <div class="mb-3">
-                        <label class="small text-muted">🏦 Transferencia</label>
+                        <label class="small">🏦 Transferencia</label>
                         {{ form.monto_transferencia }}
                     </div>
-                    
+
                     <hr>
-                    
-                    <div class="d-flex justify-content-between align-items-center">
+
+                    <div class="d-flex justify-content-between">
                         <span class="fw-bold">Pagado:</span>
                         <span id="total-pagado" class="fw-bold">$0.00</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
+
+                    <div class="d-flex justify-content-between mt-2">
                         <span class="fw-bold fs-5">Vuelto:</span>
                         <span id="vuelto-display" class="vuelto-display">$0.00</span>
                     </div>
@@ -122,116 +163,164 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-    // 1. OBTENER PRECIOS DEL BACKEND (JSON)
-   const preciosProductos = JSON.parse('{{ precios_json|escapejs }}');
+// Parseo seguro del JSON de precios
+const preciosProductos = JSON.parse('{{ precios_json|escapejs }}');
 
-    $(document).ready(function() {
-        // Inicializar Select2
-        function initSelect2(el) {
-            $(el).select2({ theme: "bootstrap-5", width: '100%', placeholder: "Buscar..." });
-        }
-        $('#id_cliente').select2({ theme: "bootstrap-5", width: '100%', allowClear: true, placeholder: "Consumidor Final" });
-        $('.form-row select').each(function() { initSelect2(this); });
+$(document).ready(function () {
 
-        // --- LÓGICA DE CÁLCULO ---
-        function calcularTotales() {
-            let granTotal = 0;
-
-            $('#formset-container .form-row:visible').each(function() {
-                const row = $(this);
-                const productId = row.find('select').val();
-                const cantidad = parseFloat(row.find('input[type="number"]').val()) || 0;
-                
-                let precio = 0;
-                if (productId && preciosProductos[productId]) {
-                    precio = preciosProductos[productId];
-                }
-
-                const subtotal = precio * cantidad;
-                granTotal += subtotal;
-
-                // Actualizar UI de la fila
-                row.find('.precio-unitario').text('$' + precio.toFixed(2));
-                row.find('.subtotal-row').text('$' + subtotal.toFixed(2));
-            });
-
-            // Actualizar Gran Total
-            $('#gran-total').text('$' + granTotal.toFixed(2));
-
-            calcularVuelto(granTotal);
-        }
-
-        function calcularVuelto(totalVenta) {
-            const efectivo = parseFloat($('#id_monto_efectivo').val()) || 0;
-            const mp = parseFloat($('#id_monto_mercadopago').val()) || 0;
-            const transf = parseFloat($('#id_monto_transferencia').val()) || 0;
-
-            const totalPagado = efectivo + mp + transf;
-            const diferencia = totalPagado - totalVenta;
-
-            $('#total-pagado').text('$' + totalPagado.toFixed(2));
-
-            const vueltoLabel = $('#vuelto-display');
-            if (diferencia >= 0) {
-                vueltoLabel.text('$' + diferencia.toFixed(2)).removeClass('text-danger').addClass('text-primary');
-            } else {
-                vueltoLabel.text('Falta: $' + Math.abs(diferencia).toFixed(2)).removeClass('text-primary').addClass('text-danger');
-            }
-        }
-
-        // --- EVENTOS ---
-        
-        // Cuando cambia producto o cantidad
-        $(document).on('change keyup', '.form-row select, .form-row input[type="number"]', function() {
-            calcularTotales();
+    function initSelect2(el) {
+        $(el).select2({
+            theme: "bootstrap-5",
+            width: '100%',
+            placeholder: "Buscar..."
         });
+    }
 
-        // Cuando cambia montos de pago
-        $('.payment-input').on('keyup change', function() {
-            // Recalculamos sin cambiar el total de venta, solo el vuelto
-            // Necesitamos el total actual, lo podemos recalcular o leer del DOM (mejor recalcular por seguridad)
-            calcularTotales(); 
-        });
+    $('.form-row select').each(function () {
+        initSelect2(this);
+    });
+    // =====================================================
+    // EVITAR PRODUCTOS DUPLICADOS
+    // =====================================================
+    $(document).on('change', 'select[name$="-producto"]', function () {
 
-        // Agregar Fila
-        $('#add-item').click(function() {
-            var formIdx = $('#id_detalles-TOTAL_FORMS').val();
-            var container = $('#formset-container');
-            var newRow = container.find('.form-row:first').clone(false);
-            
-            // Limpieza Select2
-            newRow.find('.select2-container').remove();
-            var select = newRow.find('select');
-            select.removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden').removeAttr('tabindex');
-            select.find('option').removeAttr('data-select2-id');
+        const productoSeleccionado = $(this).val();
+        if (!productoSeleccionado) return;
 
-            // Actualizar índices
-            newRow.html(newRow.html().replace(/-0-/g, '-' + formIdx + '-'));
-            newRow.find('input').val('');
-            newRow.find('input[type="number"]').val(1);
-            newRow.find('.precio-unitario').text('-');
-            newRow.find('.subtotal-row').text('$0.00');
+        let repetido = false;
+        const actual = this;
 
-            container.append(newRow);
-            $('#id_detalles-TOTAL_FORMS').val(parseInt(formIdx) + 1);
-            initSelect2(newRow.find('select'));
-        });
-
-        // Borrar Fila
-        $(document).on('click', '.btn-delete-row', function() {
-            var row = $(this).closest('tr');
-            var deleteInput = row.find('input[name$="-DELETE"]');
-            if ($('.form-row:visible').length > 1) {
-                if(deleteInput.length){ deleteInput.prop('checked', true); }
-                row.hide();
-                calcularTotales(); // Recalcular al borrar
-            } else {
-                alert("Debe haber al menos un producto.");
+        $('select[name$="-producto"]').each(function () {
+            if (this !== actual && $(this).val() === productoSeleccionado) {
+                repetido = true;
             }
         });
 
-        // Cálculo inicial al cargar
+        if (repetido) {
+            alert("⚠️ El producto ya está agregado en la venta.");
+
+            $(this).val(null).trigger('change');
+
+            const row = $(this).closest('.form-row');
+            row.find('.precio-unitario').text('-');
+            row.find('.subtotal-row').text('$0.00');
+
+            return;
+        }
+
         calcularTotales();
     });
+
+    function calcularTotales() {
+        let suma = 0;
+
+        // 1. Sumar items con sus descuentos individuales
+        $('#formset-container .form-row:visible').each(function () {
+            const row = $(this);
+            const productoId = row.find('select').val();
+            const cantidad = parseFloat(row.find('input[name$="-cantidad"]').val()) || 0;
+            const descuentoItem = parseFloat(row.find('input[name$="-descuento_porcentaje"]').val()) || 0;
+
+            let precio = 0;
+            if (productoId && preciosProductos[productoId]) {
+                precio = preciosProductos[productoId];
+            }
+
+            const bruto = precio * cantidad;
+            const descMontoItem = bruto * (descuentoItem / 100);
+            const subtotal = bruto - descMontoItem;
+
+            suma += subtotal;
+
+            row.find('.precio-unitario').text('$' + precio.toFixed(2));
+            row.find('.subtotal-row').text('$' + subtotal.toFixed(2));
+        });
+
+        $('#suma-subtotales').text('$' + suma.toFixed(2));
+
+        // 2. Aplicar Descuentos Globales
+        // Primero porcentaje, luego fijo
+        const descGlobalPorc = parseFloat($('#id_descuento_global_porcentaje').val()) || 0;
+        const descGlobalFijo = parseFloat($('#id_descuento_global').val()) || 0;
+
+        // Calculamos cuánto dinero resta el porcentaje global
+        const montoDescPorc = suma * (descGlobalPorc / 100);
+        
+        // Sumamos ambos descuentos para mostrar info
+        const totalDescontado = montoDescPorc + descGlobalFijo;
+        $('#info-descuentos').text('-$' + totalDescontado.toFixed(2));
+
+        // Calculamos total final
+        let totalFinal = suma - montoDescPorc - descGlobalFijo;
+        totalFinal = Math.max(0, totalFinal);
+
+        $('#gran-total').text('$' + totalFinal.toFixed(2));
+        calcularVuelto(totalFinal);
+    }
+
+    function calcularVuelto(totalVenta) {
+        const efectivo = parseFloat($('#id_monto_efectivo').val()) || 0;
+        const mp = parseFloat($('#id_monto_mercadopago').val()) || 0;
+        const transf = parseFloat($('#id_monto_transferencia').val()) || 0;
+
+        const totalPagado = efectivo + mp + transf;
+        const diferencia = totalPagado - totalVenta;
+
+        $('#total-pagado').text('$' + totalPagado.toFixed(2));
+
+        if (diferencia >= 0) {
+            $('#vuelto-display').text('$' + diferencia.toFixed(2)).removeClass('text-danger').addClass('text-primary');
+        } else {
+            $('#vuelto-display').text('Falta $' + Math.abs(diferencia).toFixed(2))
+                .removeClass('text-primary').addClass('text-danger');
+        }
+    }
+
+    $(document).on(
+        'keyup change',
+        'select, input[name$="-cantidad"], input[name$="-descuento_porcentaje"], #id_descuento_global, #id_descuento_global_porcentaje, #id_monto_efectivo, #id_monto_mercadopago, #id_monto_transferencia',
+        calcularTotales
+    );
+
+    $('#add-item').click(function () {
+        const totalFormsInput = $('#id_detalles-TOTAL_FORMS');
+        const formIdx = parseInt(totalFormsInput.val());
+        const container = $('#formset-container');
+        const newRow = container.find('.form-row:first').clone(false);
+
+        newRow.find('.select2-container').remove();
+
+        newRow.find(':input').each(function () {
+            const name = $(this).attr('name');
+            const id = $(this).attr('id');
+            if (name) $(this).attr('name', name.replace(/-\d+-/, '-' + formIdx + '-'));
+            if (id) $(this).attr('id', id.replace(/-\d+-/, '-' + formIdx + '-'));
+            $(this).val('');
+        });
+
+        newRow.find('input[name$="-cantidad"]').val(1);
+        newRow.find('input[name$="-descuento_porcentaje"]').val(0);
+        newRow.find('.precio-unitario').text('-');
+        newRow.find('.subtotal-row').text('$0.00');
+
+        container.append(newRow);
+        totalFormsInput.val(formIdx + 1);
+        initSelect2(newRow.find('select'));
+    });
+
+    $(document).on('click', '.btn-delete-row', function () {
+        const row = $(this).closest('tr');
+        const del = row.find('input[name$="-DELETE"]');
+        if ($('.form-row:visible').length > 1) {
+            del.prop('checked', true);
+            row.hide();
+            calcularTotales();
+        } else {
+            alert("Debe haber al menos un producto.");
+        }
+    });
+
+    calcularTotales();
+});
 </script>
 {% endblock %}

@@ -55,12 +55,14 @@ class ClienteForm(forms.ModelForm):
 class VentaForm(forms.ModelForm):
     class Meta:
         model = Venta
-        fields = ['cliente', 'monto_efectivo', 'monto_mercadopago', 'monto_transferencia']
+        fields = ['cliente', 'monto_efectivo', 'monto_mercadopago', 'monto_transferencia', 'descuento_global', 'descuento_global_porcentaje']
         widgets = {
             'cliente': forms.Select(attrs={'class': 'form-select'}),
             'monto_efectivo': forms.NumberInput(attrs={'class': 'form-control payment-input', 'value': 0}),
             'monto_mercadopago': forms.NumberInput(attrs={'class': 'form-control payment-input', 'value': 0}),
             'monto_transferencia': forms.NumberInput(attrs={'class': 'form-control payment-input', 'value': 0}),
+            'descuento_global': forms.NumberInput(attrs={'class': 'form-control', 'value': 0}),
+            'descuento_global_porcentaje': forms.NumberInput(attrs={'class': 'form-control discount-input', 'value': 0, 'min': 0, 'max': 100}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -72,10 +74,11 @@ class VentaForm(forms.ModelForm):
 class DetalleVentaForm(forms.ModelForm):
     class Meta:
         model = DetalleVenta
-        fields = ['producto', 'cantidad']
+        fields = ['producto', 'cantidad', 'descuento_porcentaje']
         widgets = {
             'producto': forms.Select(attrs={'class': 'form-select'}),
             'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'value': '1'}),
+            'descuento_porcentaje': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '100', 'value': '0'}),
         }
 
 DetalleVentaFormSet = inlineformset_factory(
